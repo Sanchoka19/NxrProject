@@ -3,14 +3,22 @@ import cryptoRandomString from 'crypto-random-string';
 
 // Configure email transporter
 export const createTransporter = () => {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_APP_PASSWORD) {
+    throw new Error('Email configuration is missing. Please set EMAIL_USER and EMAIL_APP_PASSWORD environment variables.');
+  }
+  
   return nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
-    secure: true,
+    secure: true, // use SSL
     auth: {
       user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_APP_PASSWORD,
+      pass: process.env.EMAIL_APP_PASSWORD, // This should be an App Password, not the regular Gmail password
     },
+    tls: {
+      // Do not fail on invalid certs
+      rejectUnauthorized: false
+    }
   });
 };
 
@@ -24,16 +32,24 @@ export const sendInvitationEmail = async (
   email: string, 
   inviteToken: string,
   frontendUrl: string = 'http://localhost:5000' // Default to local dev
-): Promise<boolean> => {
+): Promise<{success: boolean; error?: string}> => {
   try {
+    // Validate required environment variables
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_APP_PASSWORD) {
+      return { 
+        success: false, 
+        error: 'Email configuration is missing. Please set EMAIL_USER and EMAIL_APP_PASSWORD environment variables.' 
+      };
+    }
+    
     const transporter = createTransporter();
     
-    // Registration URL with the token
-    const registrationUrl = `${frontendUrl}/register?inviteToken=${inviteToken}`;
+    // Registration URL with the token - make sure it points to the register-with-invite page
+    const registrationUrl = `${frontendUrl}/auth?inviteToken=${inviteToken}`;
     
     // Email content
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: `"Nexaro CRM" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Invitation to join Nexaro-CRM',
       html: `
@@ -52,13 +68,19 @@ export const sendInvitationEmail = async (
           <p>Thank you,<br>The Nexaro-CRM Team</p>
         </div>
       `,
+      text: `Welcome to Nexaro-CRM! You have been invited to join. Please register your account by visiting: ${registrationUrl}. This invitation link will expire in 48 hours.`
     };
     
-    // Send email
-    await transporter.sendMail(mailOptions);
-    return true;
+    // Send email and wait for the response
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully:', info.messageId);
+    return { success: true };
   } catch (error) {
-    console.error('Error sending invitation email:', error);
-    return false;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Error sending invitation email:', errorMessage);
+    return { 
+      success: false, 
+      error: `Failed to send invitation email: ${errorMessage}` 
+    };
   }
 };
