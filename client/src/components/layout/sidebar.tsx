@@ -13,21 +13,19 @@ type NavItemProps = {
 
 function NavItem({ href, icon, children, currentPath }: NavItemProps) {
   const isActive = href === currentPath;
-  const [, navigate] = useLocation();
   
   return (
-    <div
-      onClick={() => navigate(href)}
-      className={cn(
+    <Link href={href}>
+      <a className={cn(
         "block px-4 py-2.5 rounded-md text-base font-medium flex items-center space-x-3 cursor-pointer",
         isActive 
           ? "bg-gray-900 text-white" 
           : "text-gray-300 hover:bg-gray-700 hover:text-white"
-      )}
-    >
-      {icon}
-      <span>{children}</span>
-    </div>
+      )}>
+        {icon}
+        <span>{children}</span>
+      </a>
+    </Link>
   );
 }
 
