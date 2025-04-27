@@ -1,4 +1,3 @@
-
 import { Switch } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -15,6 +14,9 @@ import BookingsPage from "@/pages/bookings-page";
 import ServicesPage from "@/pages/services-page";
 import OrganizationPage from "@/pages/organization-page";
 import { Route } from "wouter";
+import React, { Suspense, lazy } from "react";
+import { ErrorBoundary } from "react-error-boundary";
+
 
 function Router() {
   return (
