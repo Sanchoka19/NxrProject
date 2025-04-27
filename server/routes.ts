@@ -520,6 +520,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Invitation routes
   app.post("/api/invitations", checkRole(['founder', 'admin']), sendInvite);
   
+  // Organization invite - alias to the invitations route for UI consistency
+  app.post("/api/organization/invite", checkRole(['founder', 'admin']), sendInvite);
+  
   // Verify invitation token
   app.get("/api/invitations/verify/:token", async (req, res, next) => {
     try {
