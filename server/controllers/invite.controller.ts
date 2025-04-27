@@ -58,20 +58,24 @@ export const sendInvite = async (req: Request, res: Response) => {
       expiresAt,
     });
 
-    // Send invitation email
-    const emailSent = await sendInvitationEmail(inviteeEmail, inviteToken);
+    // Send invitation email - get the app URL from request
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const host = req.get('host');
+    const frontendUrl = `${protocol}://${host}`;
+    
+    const emailResult = await sendInvitationEmail(inviteeEmail, inviteToken, frontendUrl);
 
-    if (emailSent) {
+    if (emailResult.success) {
       return res.status(200).json({ 
         message: 'Invitation sent successfully', 
         invitationId: invitation.id 
       });
     } else {
-      // If email sending fails, still return success but with a warning
-      return res.status(200).json({ 
+      // If email sending fails, still create the invitation but return a warning
+      return res.status(207).json({ 
         message: 'Invitation created but email delivery failed', 
         invitationId: invitation.id,
-        warning: 'Email could not be sent. Please verify your email configuration.'
+        warning: emailResult.error || 'Email could not be sent. Please verify your email configuration.'
       });
     }
   } catch (error) {
