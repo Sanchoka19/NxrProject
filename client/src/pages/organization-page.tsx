@@ -57,9 +57,8 @@ const organizationFormSchema = z.object({
 
 // Invite user form schema
 const inviteUserFormSchema = z.object({
-  email: z.string().email("Invalid email format"),
-  name: z.string().min(2, "Name is required"),
-  role: z.enum(['admin', 'staff']),
+  inviteeEmail: z.string().email("Invalid email format"),
+  role: z.enum(['admin', 'staff']).default('staff'),
 });
 
 type OrganizationFormValues = z.infer<typeof organizationFormSchema>;
@@ -86,8 +85,7 @@ export default function OrganizationPage() {
   const inviteUserForm = useForm<InviteUserFormValues>({
     resolver: zodResolver(inviteUserFormSchema),
     defaultValues: {
-      email: "",
-      name: "",
+      inviteeEmail: "",
       role: "staff",
     },
   });
@@ -495,27 +493,16 @@ export default function OrganizationPage() {
             <form onSubmit={inviteUserForm.handleSubmit(onInviteUserSubmit)} className="space-y-4">
               <FormField
                 control={inviteUserForm.control}
-                name="name"
+                name="inviteeEmail"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel>Email Address</FormLabel>
                     <FormControl>
-                      <Input placeholder="Jane Doe" {...field} />
+                      <Input type="email" placeholder="colleague@example.com" {...field} />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={inviteUserForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input placeholder="jane@example.com" {...field} />
-                    </FormControl>
+                    <FormDescription>
+                      An invitation will be sent to this email address
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -525,36 +512,24 @@ export default function OrganizationPage() {
                 control={inviteUserForm.control}
                 name="role"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="space-y-3">
                     <FormLabel>Role</FormLabel>
-                    <div className="flex space-x-4">
-                      <div className="flex items-center">
-                        <input
-                          type="radio"
-                          id="role-admin"
-                          value="admin"
-                          checked={field.value === 'admin'}
-                          onChange={() => field.onChange('admin')}
-                          className="h-4 w-4 text-primary border-gray-300 focus:ring-primary"
-                        />
-                        <label htmlFor="role-admin" className="ml-2 block text-sm text-gray-900">
-                          Admin
-                        </label>
-                      </div>
-                      <div className="flex items-center">
-                        <input
-                          type="radio"
-                          id="role-staff"
-                          value="staff"
-                          checked={field.value === 'staff'}
-                          onChange={() => field.onChange('staff')}
-                          className="h-4 w-4 text-primary border-gray-300 focus:ring-primary"
-                        />
-                        <label htmlFor="role-staff" className="ml-2 block text-sm text-gray-900">
-                          Staff
-                        </label>
-                      </div>
-                    </div>
+                    <FormControl>
+                      <RadioGroup 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                        className="flex flex-col space-y-1"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="admin" id="role-admin" />
+                          <Label htmlFor="role-admin">Admin</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="staff" id="role-staff" />
+                          <Label htmlFor="role-staff">Staff</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
                     <FormDescription>
                       Admins can manage organization settings. Staff can only manage clients, services, and bookings.
                     </FormDescription>
