@@ -33,7 +33,13 @@ const registerSchema = z.object({
   role: z.enum(['founder', 'admin', 'staff']).optional()
 });
 
+// Registration with Invite Data
+const registerWithInviteSchema = registerSchema.extend({
+  inviteToken: z.string().min(1, "Invite token is required"),
+});
+
 type RegisterData = z.infer<typeof registerSchema>;
+type RegisterWithInviteData = z.infer<typeof registerWithInviteSchema>;
 
 // Auth Context Type
 type AuthContextType = {
@@ -43,7 +49,7 @@ type AuthContextType = {
   loginMutation: UseMutationResult<User, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<User, Error, RegisterData>;
-  registerWithInviteMutation: UseMutationResult<User, Error, RegisterData>;
+  registerWithInviteMutation: UseMutationResult<User, Error, RegisterWithInviteData>;
 };
 
 // Create Auth Context
@@ -109,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Register With Invite Mutation
   const registerWithInviteMutation = useMutation({
-    mutationFn: async (data: RegisterData) => {
+    mutationFn: async (data: RegisterWithInviteData) => {
       const res = await apiRequest("POST", "/api/register-with-invite", data);
       return await res.json();
     },

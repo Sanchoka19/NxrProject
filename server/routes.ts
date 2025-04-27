@@ -10,6 +10,7 @@ import {
   insertOrganizationSchema,
   insertSubscriptionSchema
 } from "@shared/schema";
+import { sendInvite } from "./controllers/invite.controller";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
@@ -511,6 +512,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const updatedOrganization = await storage.updateOrganization(user.organizationId, updateData);
       res.json(updatedOrganization);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Invitation routes
+  app.post("/api/invitations", checkRole(['founder', 'admin']), sendInvite);
+  
+  // Verify invitation token
+  app.get("/api/invitations/verify/:token", async (req, res, next) => {
+    try {
+      const inviteToken = req.params.token;
+      if (!inviteToken) {
+        return res.status(400).json({ message: "Invalid invitation token" });
+      }
+      
+      const invitation = await storage.getInvitationByToken(inviteToken);
+      if (!invitation) {
+        return res.status(404).json({ message: "Invitation not found" });
+      }
+      
+      // Check if invitation is expired
+      if (invitation.expiresAt && new Date(invitation.expiresAt) < new Date()) {
+        return res.status(400).json({ message: "Invitation has expired" });
+      }
+      
+      // Check if invitation has already been used
+      if (invitation.isUsed) {
+        return res.status(400).json({ message: "Invitation has already been used" });
+      }
+      
+      // Return invitation details without sensitive data
+      return res.status(200).json({
+        email: invitation.email,
+        role: invitation.role,
+        organizationId: invitation.organizationId
+      });
     } catch (error) {
       next(error);
     }

@@ -128,7 +128,12 @@ export function setupAuth(app: Express) {
   // Register with invite endpoint
   app.post("/api/register-with-invite", async (req, res, next) => {
     try {
-      const validation = registerSchema.safeParse(req.body);
+      // Create a schema that requires the invite token
+      const registerWithInviteSchema = registerSchema.extend({
+        inviteToken: z.string().min(1, "Invite token is required"),
+      });
+      
+      const validation = registerWithInviteSchema.safeParse(req.body);
       
       if (!validation.success) {
         return res.status(400).json({ 
@@ -137,11 +142,28 @@ export function setupAuth(app: Express) {
         });
       }
       
-      const { name, email, password, organizationId, role } = validation.data;
+      const { name, email, password, inviteToken } = validation.data;
       
-      // Require organizationId for invited users
-      if (!organizationId) {
-        return res.status(400).json({ message: "Organization ID is required" });
+      // Verify the invitation token
+      const invitation = await storage.getInvitationByToken(inviteToken);
+      
+      if (!invitation) {
+        return res.status(400).json({ message: "Invalid invitation token" });
+      }
+      
+      // Check if invitation has already been used
+      if (invitation.isUsed) {
+        return res.status(400).json({ message: "Invitation has already been used" });
+      }
+      
+      // Check if invitation is expired
+      if (invitation.expiresAt && new Date(invitation.expiresAt) < new Date()) {
+        return res.status(400).json({ message: "Invitation has expired" });
+      }
+      
+      // Check if the email matches the invitation
+      if (invitation.email !== email) {
+        return res.status(400).json({ message: "Email does not match invitation" });
       }
       
       const existingUser = await storage.getUserByEmail(email);
@@ -153,9 +175,12 @@ export function setupAuth(app: Express) {
         name,
         email,
         passwordHash: await hashPassword(password),
-        organizationId,
-        role: role || 'staff' // Default to staff role for invited users
+        organizationId: invitation.organizationId,
+        role: invitation.role || 'staff'
       });
+      
+      // Mark the invitation as used
+      await storage.markInvitationAsUsed(invitation.id);
 
       req.login(user, (err) => {
         if (err) return next(err);
