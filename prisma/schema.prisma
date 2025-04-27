@@ -1,0 +1,107 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model
+model User {
+  id             Int      @id @default(autoincrement())
+  name           String
+  email          String   @unique
+  passwordHash   String
+  role           Role     @default(staff)
+  organizationId Int?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime @default(now())
+}
+
+// Client model
+model Client {
+  id             Int      @id @default(autoincrement())
+  name           String
+  email          String
+  phone          String?
+  company        String?
+  address        String?
+  notes          String?
+  isActive       Boolean  @default(true)
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  bookings       Booking[]
+  createdAt      DateTime @default(now())
+}
+
+// Service model
+model Service {
+  id             Int      @id @default(autoincrement())
+  name           String
+  description    String?
+  price          Int      // stored in cents
+  duration       Int?     // stored in minutes
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  bookings       Booking[]
+  createdAt      DateTime @default(now())
+}
+
+// Booking model
+model Booking {
+  id        Int       @id @default(autoincrement())
+  clientId  Int
+  client    Client    @relation(fields: [clientId], references: [id])
+  serviceId Int
+  service   Service   @relation(fields: [serviceId], references: [id])
+  status    BookingStatus @default(pending)
+  date      DateTime
+  notes     String?
+  createdAt DateTime  @default(now())
+}
+
+// Organization model
+model Organization {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String
+  phone        String?
+  address      String?
+  users        User[]
+  clients      Client[]
+  services     Service[]
+  subscriptions Subscription[]
+  createdAt    DateTime @default(now())
+}
+
+// Subscription model
+model Subscription {
+  id             Int      @id @default(autoincrement())
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  planName       String
+  pricePerMonth  Int      // stored in cents
+  maxUsers       Int?
+  startDate      DateTime
+  endDate        DateTime?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+}
+
+// Enums
+enum Role {
+  founder
+  admin
+  staff
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  cancelled
+  completed
+}
