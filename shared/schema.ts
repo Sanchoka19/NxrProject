@@ -124,6 +124,25 @@ export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
   }),
 }));
 
+// Invitations
+export const invitations = pgTable('invitations', {
+  id: serial('id').primaryKey(),
+  email: text('email').notNull(),
+  inviteToken: text('invite_token').notNull().unique(),
+  organizationId: integer('organization_id').references(() => organizations.id).notNull(),
+  role: userRoleEnum('role').notNull().default('staff'),
+  isUsed: boolean('is_used').default(false).notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const invitationsRelations = relations(invitations, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [invitations.organizationId],
+    references: [organizations.id],
+  }),
+}));
+
 // Insert schemas
 export const insertOrganizationSchema = createInsertSchema(organizations).omit({ id: true, createdAt: true });
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
@@ -131,6 +150,7 @@ export const insertClientSchema = createInsertSchema(clients).omit({ id: true, c
 export const insertServiceSchema = createInsertSchema(services).omit({ id: true, createdAt: true });
 export const insertBookingSchema = createInsertSchema(bookings).omit({ id: true, createdAt: true });
 export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({ id: true, createdAt: true });
+export const insertInvitationSchema = createInsertSchema(invitations).omit({ id: true, createdAt: true });
 
 // Types
 export type Organization = typeof organizations.$inferSelect;
@@ -150,3 +170,6 @@ export type InsertBooking = z.infer<typeof insertBookingSchema>;
 
 export type Subscription = typeof subscriptions.$inferSelect;
 export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
+
+export type Invitation = typeof invitations.$inferSelect;
+export type InsertInvitation = z.infer<typeof insertInvitationSchema>;

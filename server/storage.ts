@@ -5,6 +5,7 @@ import {
   bookings, 
   organizations, 
   subscriptions,
+  invitations,
   type User, 
   type InsertUser,
   type Client,
@@ -16,7 +17,9 @@ import {
   type Organization,
   type InsertOrganization,
   type Subscription,
-  type InsertSubscription
+  type InsertSubscription,
+  type Invitation,
+  type InsertInvitation
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, desc } from "drizzle-orm";
@@ -71,6 +74,11 @@ export interface IStorage {
   getRecentBookings(organizationId: number, limit?: number): Promise<any[]>;
   getRecentClients(organizationId: number, limit?: number): Promise<any[]>;
 
+  // Invitation operations
+  createInvitation(invitation: InsertInvitation): Promise<Invitation>;
+  getInvitationByToken(token: string): Promise<Invitation | undefined>;
+  markInvitationAsUsed(id: number): Promise<Invitation | undefined>;
+  
   // Session storage
   sessionStore: ReturnType<typeof connectPg>;
 }
@@ -367,6 +375,32 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
 
     return result;
+  }
+
+  // Invitation operations
+  async createInvitation(invitationData: InsertInvitation): Promise<Invitation> {
+    const [invitation] = await db
+      .insert(invitations)
+      .values(invitationData)
+      .returning();
+    return invitation;
+  }
+
+  async getInvitationByToken(token: string): Promise<Invitation | undefined> {
+    const [invitation] = await db
+      .select()
+      .from(invitations)
+      .where(eq(invitations.inviteToken, token));
+    return invitation;
+  }
+
+  async markInvitationAsUsed(id: number): Promise<Invitation | undefined> {
+    const [updatedInvitation] = await db
+      .update(invitations)
+      .set({ isUsed: true })
+      .where(eq(invitations.id, id))
+      .returning();
+    return updatedInvitation;
   }
 }
 
