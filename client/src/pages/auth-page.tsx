@@ -154,9 +154,19 @@ export default function AuthPage() {
                         )}
                       />
                       
-                      <a href="#" className="text-sm font-medium text-primary hover:text-primary-dark">
+                      <Button
+                        variant="link"
+                        type="button"
+                        className="p-0 h-auto text-sm font-medium text-primary hover:text-primary-dark"
+                        onClick={() => {
+                          toast({
+                            title: "Password Reset",
+                            description: "Password reset functionality will be added soon.",
+                          });
+                        }}
+                      >
                         Forgot password?
-                      </a>
+                      </Button>
                     </div>
                     
                     <Button 
@@ -168,16 +178,14 @@ export default function AuthPage() {
                     </Button>
                     
                     <div className="text-center">
-                      <a 
-                        href="#" 
-                        className="text-sm font-medium text-primary hover:text-primary-dark"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setActiveTab("register");
-                        }}
+                      <Button 
+                        variant="link"
+                        type="button"
+                        className="p-0 h-auto text-sm font-medium text-primary hover:text-primary-dark"
+                        onClick={() => setActiveTab("register")}
                       >
                         Don't have an account? Register
-                      </a>
+                      </Button>
                     </div>
                   </form>
                 </Form>
