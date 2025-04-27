@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -31,6 +32,7 @@ type RegisterValues = z.infer<typeof registerSchema>;
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<string>("login");
   const { user, loginMutation, registerMutation } = useAuth();
+  const { toast } = useToast();
   const [, navigate] = useLocation();
 
   // Initialize forms
@@ -256,16 +258,14 @@ export default function AuthPage() {
                     </Button>
                     
                     <div className="text-center">
-                      <a 
-                        href="#" 
-                        className="text-sm font-medium text-primary hover:text-primary-dark"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setActiveTab("login");
-                        }}
+                      <Button 
+                        variant="link" 
+                        type="button"
+                        className="p-0 h-auto text-sm font-medium text-primary hover:text-primary-dark"
+                        onClick={() => setActiveTab("login")}
                       >
                         Already have an account? Sign in
-                      </a>
+                      </Button>
                     </div>
                   </form>
                 </Form>
