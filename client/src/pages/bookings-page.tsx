@@ -216,10 +216,10 @@ export default function BookingsPage() {
 
   // Handle form submission
   const onSubmit = (data: BookingFormValues) => {
-    // Format the date to ISO string for API
+    // Send the date directly as a Date object
     const formattedData = {
       ...data,
-      date: data.date.toISOString(),
+      date: data.date,
     };
 
     if (editingBooking) {

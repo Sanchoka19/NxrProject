@@ -101,6 +101,8 @@ export function setupAuth(app: Express) {
       const { name, email, password, organizationId, role } = validation.data;
       
       const existingUser = await storage.getUserByEmail(email);
+
+      console.log("existingUser", existingUser);  
       if (existingUser) {
         return res.status(400).json({ message: "Email already registered" });
       }
@@ -114,6 +116,7 @@ export function setupAuth(app: Express) {
       });
 
       req.login(user, (err) => {
+        console.log("login", err);
         if (err) return next(err);
         
         // Don't return the passwordHash
@@ -121,6 +124,7 @@ export function setupAuth(app: Express) {
         res.status(201).json(userWithoutPassword);
       });
     } catch (error) {
+      console.error("Error in register:", error instanceof Error ? error.message : (error as any).message);
       next(error);
     }
   });

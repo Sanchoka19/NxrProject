@@ -148,7 +148,13 @@ export const insertOrganizationSchema = createInsertSchema(organizations).omit({
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertClientSchema = createInsertSchema(clients).omit({ id: true, createdAt: true });
 export const insertServiceSchema = createInsertSchema(services).omit({ id: true, createdAt: true });
-export const insertBookingSchema = createInsertSchema(bookings).omit({ id: true, createdAt: true });
+export const insertBookingSchema = z.object({
+  clientId: z.number(),
+  serviceId: z.number(),
+  status: z.enum(['pending', 'confirmed', 'cancelled', 'completed']),
+  date: z.string().transform((str) => new Date(str)),
+  notes: z.string().nullable().optional(),
+});
 export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({ id: true, createdAt: true });
 export const insertInvitationSchema = createInsertSchema(invitations).omit({ id: true, createdAt: true });
 

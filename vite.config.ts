@@ -5,13 +5,7 @@ import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 export default defineConfig({
   plugins: [
-    react({
-      fastRefresh: true,
-      // Add better error handling
-      babel: {
-        plugins: ['@babel/plugin-transform-react-jsx-source']
-      }
-    }),
+    react(),
     runtimeErrorOverlay(),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined

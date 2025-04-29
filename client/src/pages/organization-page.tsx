@@ -20,6 +20,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Building, Mail, Phone, MapPin, Users, ShieldCheck, X, Plus } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import React from "react";
+import { useLocation } from "wouter";
 
 // Organization type
 interface Organization {
@@ -37,6 +39,8 @@ interface User {
   email: string;
   role: 'founder' | 'admin' | 'staff';
   createdAt: string;
+  status?: 'active' | 'pending' | 'expired' | 'used';
+  inviteExpiresAt?: string;
 }
 
 interface Subscription {
@@ -71,6 +75,7 @@ export default function OrganizationPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<string>("organization");
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [, setLocation] = useLocation();
   
   // Organization form
   const organizationForm = useForm<OrganizationFormValues>({
@@ -96,15 +101,19 @@ export default function OrganizationPage() {
   const { data: organization, isLoading: isLoadingOrg } = useQuery<Organization>({
     queryKey: ["/api/organization"],
     enabled: !!user,
-    onSuccess: (data) => {
-      organizationForm.reset({
-        name: data.name,
-        email: data.email,
-        phone: data.phone || "",
-        address: data.address || "",
-      });
-    },
   });
+
+  // Update form when organization data is loaded
+  React.useEffect(() => {
+    if (organization) {
+      organizationForm.reset({
+        name: organization.name,
+        email: organization.email,
+        phone: organization.phone || "",
+        address: organization.address || "",
+      });
+    }
+  }, [organization, organizationForm]);
 
   // Fetch team members
   const { data: teamMembers, isLoading: isLoadingTeam } = useQuery<User[]>({
@@ -351,6 +360,7 @@ export default function OrganizationPage() {
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Role</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead>Joined</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -375,6 +385,24 @@ export default function OrganizationPage() {
                               {getRoleBadge(member.role)}
                             </TableCell>
                             <TableCell>
+                              {member.status === 'active' ? (
+                                <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Active</Badge>
+                              ) : member.status === 'pending' ? (
+                                <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+                                  Pending
+                                  {member.inviteExpiresAt && (
+                                    <span className="ml-1 text-xs">
+                                      (Expires: {new Date(member.inviteExpiresAt).toLocaleDateString()})
+                                    </span>
+                                  )}
+                                </Badge>
+                              ) : member.status === 'expired' ? (
+                                <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Expired</Badge>
+                              ) : member.status === 'used' ? (
+                                <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">Used</Badge>
+                              ) : null}
+                            </TableCell>
+                            <TableCell>
                               <div className="text-sm text-gray-500">
                                 {new Date(member.createdAt).toLocaleDateString()}
                               </div>
@@ -383,7 +411,7 @@ export default function OrganizationPage() {
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center py-6 text-gray-500">
+                          <TableCell colSpan={5} className="text-center py-6 text-gray-500">
                             No team members found
                           </TableCell>
                         </TableRow>
@@ -451,11 +479,18 @@ export default function OrganizationPage() {
                   </div>
 
                   <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
-                    <Button variant="outline" className="w-full sm:w-auto">
+                    <Button 
+                      variant="outline" 
+                      className="w-full sm:w-auto"
+                      onClick={() => setLocation("/billing-history")}
+                    >
                       Billing History
                     </Button>
                     {canEdit && user?.role === 'founder' && (
-                      <Button className="w-full sm:w-auto">
+                      <Button 
+                        className="w-full sm:w-auto"
+                        onClick={() => setLocation("/subscription-plans")}
+                      >
                         Manage Subscription
                       </Button>
                     )}
@@ -470,7 +505,7 @@ export default function OrganizationPage() {
                     Choose a plan to continue using all features.
                   </p>
                   {canEdit && user?.role === 'founder' && (
-                    <Button>
+                    <Button onClick={() => setLocation("/subscription-plans")}>
                       Choose a Plan
                     </Button>
                   )}

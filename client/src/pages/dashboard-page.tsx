@@ -23,7 +23,7 @@ type RecentBooking = {
   date: string;
   status: string;
   clientName: string;
-  service: string;
+  service: string | { name: string; description: string; price: number; duration: number; organizationId: number; createdAt: string; };
 };
 
 type RecentClient = {
@@ -219,12 +219,12 @@ export default function DashboardPage() {
                         <div className="flex items-center space-x-4">
                           <div className="flex-shrink-0">
                             <span className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-primary-100 text-primary-700">
-                              <span className="font-medium">{booking.clientName.substring(0, 2).toUpperCase()}</span>
+                              <span className="font-medium">{booking.clientName ? booking.clientName.substring(0, 2).toUpperCase() : 'NA'}</span>
                             </span>
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-900 truncate">{booking.clientName}</p>
-                            <p className="text-sm text-gray-500 truncate">{booking.service}</p>
+                            <p className="text-sm text-gray-500 truncate">{typeof booking.service === 'object' ? booking.service.name : booking.service}</p>
                           </div>
                           <div>
                             {getStatusBadge(booking.status)}

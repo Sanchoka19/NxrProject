@@ -576,6 +576,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/subscription", async (req, res, next) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const user = req.user;
+      if (!user.organizationId) {
+        return res.status(400).json({ message: "User not associated with an organization" });
+      }
+
+      const { planName, pricePerMonth, maxUsers, startDate, isActive } = req.body;
+
+      // Validate required fields
+      if (!planName || !pricePerMonth || !startDate) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // Create new subscription
+      const subscription = await storage.createSubscription({
+        organizationId: user.organizationId,
+        planName,
+        pricePerMonth,
+        maxUsers,
+        startDate: new Date(startDate),
+        isActive
+      });
+
+      res.status(201).json(subscription);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.put("/api/subscription/:id", async (req, res, next) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const user = req.user;
+      if (!user.organizationId) {
+        return res.status(400).json({ message: "User not associated with an organization" });
+      }
+
+      const subscriptionId = parseInt(req.params.id);
+      const subscription = await storage.getSubscription(subscriptionId);
+
+      if (!subscription) {
+        return res.status(404).json({ message: "Subscription not found" });
+      }
+
+      if (subscription.organizationId !== user.organizationId) {
+        return res.status(403).json({ message: "Not authorized to update this subscription" });
+      }
+
+      const { planName, pricePerMonth, maxUsers, startDate, endDate, isActive } = req.body;
+
+      // Update subscription
+      const updatedSubscription = await storage.updateSubscription(subscriptionId, {
+        planName,
+        pricePerMonth,
+        maxUsers,
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+        isActive
+      });
+
+      res.json(updatedSubscription);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   // Dashboard routes
   app.get("/api/dashboard/stats", async (req, res, next) => {
     if (!req.isAuthenticated()) {
@@ -628,6 +702,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
       const clients = await storage.getRecentClients(user.organizationId, limit);
       res.json(clients);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Team members route
+  app.get("/api/team-members", async (req, res, next) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const user = req.user;
+      if (!user.organizationId) {
+        return res.status(400).json({ message: "User not associated with an organization" });
+      }
+      
+      const teamMembers = await storage.getTeamMembers(user.organizationId);
+      res.json(teamMembers);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Organization users route - alias for team members
+  app.get("/api/organization/users", async (req, res, next) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const user = req.user;
+      if (!user.organizationId) {
+        return res.status(400).json({ message: "User not associated with an organization" });
+      }
+      
+      const teamMembers = await storage.getTeamMembers(user.organizationId);
+      res.json(teamMembers);
     } catch (error) {
       next(error);
     }

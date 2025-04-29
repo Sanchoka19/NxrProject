@@ -65,7 +65,7 @@ export const sendInvitationEmail = async (
           <p>Or copy and paste this URL into your browser:</p>
           <p style="word-break: break-all; color: #666;">${registrationUrl}</p>
           <p>This invitation link will expire in 48 hours.</p>
-          <p>Thank you,<br>The Nexaro-CRM Team</p>
+          <p> ნუკრიი აქაც მოგაგენით <br>The Nexaro-CRM Team</p>
         </div>
       `,
       text: `Welcome to Nexaro-CRM! You have been invited to join. Please register your account by visiting: ${registrationUrl}. This invitation link will expire in 48 hours.`
